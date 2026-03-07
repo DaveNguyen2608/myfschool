@@ -77,3 +77,4 @@ D:\myfschool\MyFSchool.Api\obj\Debug\net9.0\refint\MyFSchool.Api.dll
 D:\myfschool\MyFSchool.Api\obj\Debug\net9.0\MyFSchool.Api.pdb
 D:\myfschool\MyFSchool.Api\obj\Debug\net9.0\MyFSchool.Api.genruntimeconfig.cache
 D:\myfschool\MyFSchool.Api\obj\Debug\net9.0\ref\MyFSchool.Api.dll
+D:\myfschool\MyFSchool.Api\obj\Debug\net9.0\MyFSchool.Api.sourcelink.json

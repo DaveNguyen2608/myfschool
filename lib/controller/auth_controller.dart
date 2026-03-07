@@ -5,11 +5,11 @@ class AuthController {
   final AuthRepository _repository = AuthRepository();
 
   Future<LoginResponse> login({
-    required String username,
+    required String phoneNumber,
     required String password,
   }) async {
-    return _repository.login(
-      username: username,
+    return await _repository.login(
+      phoneNumber: phoneNumber,
       password: password,
     );
   }

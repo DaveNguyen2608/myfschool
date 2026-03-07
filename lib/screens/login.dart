@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../controller/auth_controller.dart';
 import 'forgot_password.dart';
 import 'homescreen.dart';
@@ -14,27 +15,39 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   bool _obscure = true;
 
-  final _usernameCtrl = TextEditingController();
+  final _phoneCtrl = TextEditingController();
   final _passCtrl = TextEditingController();
   final AuthController _authController = AuthController();
 
   bool _isLoading = false;
   String? _error;
 
+  bool _isValidVietnamPhone(String phone) {
+    final regex = RegExp(r'^0[35789][0-9]{8}$');
+    return regex.hasMatch(phone);
+  }
+
   @override
   void dispose() {
-    _usernameCtrl.dispose();
+    _phoneCtrl.dispose();
     _passCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _handleLogin() async {
-    final username = _usernameCtrl.text.trim();
+    final phone = _phoneCtrl.text.trim();
     final password = _passCtrl.text.trim();
 
-    if (username.isEmpty || password.isEmpty) {
+    if (phone.isEmpty || password.isEmpty) {
       setState(() {
-        _error = 'Vui lòng nhập đầy đủ tài khoản và mật khẩu';
+        _error = 'Số điện thoại và mật khẩu không được để trống';
+      });
+      return;
+    }
+
+    if (!_isValidVietnamPhone(phone)) {
+      setState(() {
+        _error = 'Số điện thoại phải đúng định dạng Việt Nam, gồm 10 số';
       });
       return;
     }
@@ -46,7 +59,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final result = await _authController.login(
-        username: username,
+        phoneNumber: phone,
         password: password,
       );
 
@@ -63,24 +76,14 @@ class _LoginPageState extends State<LoginPage> {
       );
     } on DioException catch (e) {
       String errorMsg = 'Đăng nhập thất bại';
-
       final data = e.response?.data;
       if (data is Map<String, dynamic> && data.containsKey('message')) {
         errorMsg = data['message'].toString();
-      } else if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.receiveTimeout ||
-          e.type == DioExceptionType.sendTimeout) {
-        errorMsg = 'Kết nối tới máy chủ bị timeout';
-      } else if (e.type == DioExceptionType.connectionError) {
-        errorMsg = 'Không kết nối được tới máy chủ';
       }
-
-      if (!mounted) return;
       setState(() {
         _error = errorMsg;
       });
     } catch (e) {
-      if (!mounted) return;
       setState(() {
         _error = 'Có lỗi xảy ra';
       });
@@ -112,7 +115,7 @@ class _LoginPageState extends State<LoginPage> {
   }) {
     return InputDecoration(
       hintText: hint,
-      hintStyle: const TextStyle(color: Colors.black),
+      hintStyle: const TextStyle(color: Colors.black54),
       isDense: true,
       contentPadding: const EdgeInsets.symmetric(vertical: 10),
       suffixIcon: suffixIcon,
@@ -146,7 +149,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 26),
               const Text(
-                "Sign In",
+                "Đăng Nhập",
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
@@ -155,25 +158,30 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 6),
               const Text(
-                "Hi there! Nice to see you again.",
+                "Ứng dụng thông tin đào tạo FPT Schools",
                 style: TextStyle(color: Colors.orange, fontSize: 14),
               ),
               const SizedBox(height: 26),
 
-              _label("Username:"),
+              _label("Số điện thoại"),
               TextField(
-                controller: _usernameCtrl,
-                decoration: _underlineDec(hint: ""),
+                controller: _phoneCtrl,
+                keyboardType: TextInputType.phone,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  LengthLimitingTextInputFormatter(10),
+                ],
+                decoration: _underlineDec(hint: "Nhập số điện thoại"),
               ),
 
               const SizedBox(height: 18),
 
-              _label("Password"),
+              _label("Mật khẩu"),
               TextField(
                 controller: _passCtrl,
                 obscureText: _obscure,
                 decoration: _underlineDec(
-                  hint: "",
+                  hint: "Nhập mật khẩu",
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
                     icon: Icon(
@@ -205,17 +213,20 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2.5,
-                          ),
-                        )
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2.5,
+                    ),
+                  )
                       : const Text(
-                          "Sign in",
-                          style: TextStyle(fontWeight: FontWeight.w700),
-                        ),
+                    "Đăng nhập",
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  ),
                 ),
               ),
 
@@ -234,7 +245,7 @@ class _LoginPageState extends State<LoginPage> {
                       );
                     },
                     child: const Text(
-                      "Forgot Password?",
+                      "Quên mật khẩu?",
                       style: TextStyle(
                         color: Colors.black38,
                         fontWeight: FontWeight.w600,

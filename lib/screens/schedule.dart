@@ -41,7 +41,7 @@ class _SchedulePageState extends State<SchedulePage> {
 
     try {
       final response = await ApiService.dio.get(
-        '/api/Schedule/weekly',
+        '/Schedule/weekly',
         queryParameters: {
           'username': widget.username,
         },

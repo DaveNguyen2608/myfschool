@@ -6,13 +6,13 @@ class AuthRepository {
   final Dio _dio = ApiService.dio;
 
   Future<LoginResponse> login({
-    required String username,
+    required String phoneNumber,
     required String password,
   }) async {
     final response = await _dio.post(
-      '/api/Auth/login',
+      '/auth/login',
       data: {
-        'username': username,
+        'phoneNumber': phoneNumber,
         'password': password,
       },
     );
