@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("MyFSchool.Api")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+a28eee1dabf2d2aac747344092ea68ba4ab88b0c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d671d22195db0455bb1ace88ba70a434099eb6ec")]
 [assembly: System.Reflection.AssemblyProductAttribute("MyFSchool.Api")]
 [assembly: System.Reflection.AssemblyTitleAttribute("MyFSchool.Api")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

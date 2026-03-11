@@ -29,8 +29,26 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// CORS must be early in the pipeline
+// 1) CORS must be the VERY FIRST middleware in the pipeline
 app.UseCors("AllowAll");
+
+// 2) Global exception handler — CORS headers already added by middleware above
+app.Use(async (context, next) =>
+{
+    try
+    {
+        await next();
+    }
+    catch (Exception ex)
+    {
+        if (!context.Response.HasStarted)
+        {
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { message = "Internal server error", detail = ex.Message });
+        }
+    }
+});
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
