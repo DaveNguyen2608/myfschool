@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'schedule.dart';
+import 'club_page.dart';
 
 class HomeScreen extends StatefulWidget {
   final String fullName;
@@ -145,7 +146,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.science_outlined,
                         label: "Câu lạc bộ",
                         onTap: () {
-                          // TODO
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ClubPage(username: widget.username),
+                            ),
+                          );
                         },
                       ),
                       _MenuTile(

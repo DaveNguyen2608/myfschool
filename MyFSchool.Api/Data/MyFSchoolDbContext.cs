@@ -27,6 +27,10 @@ namespace MyFSchool.Api.Data
         public DbSet<ScheduleSlot> ScheduleSlots { get; set; }
         public DbSet<Timetable> Timetables { get; set; }
 
+
+        public DbSet<Club> Clubs { get; set; }
+        public DbSet<ClubRegistration> ClubRegistrations { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
