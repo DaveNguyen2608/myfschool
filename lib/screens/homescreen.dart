@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'schedule.dart';
 import 'club_page.dart';
+import 'score_page.dart';
 
 class HomeScreen extends StatefulWidget {
   final String fullName;
@@ -184,7 +185,12 @@ class _HomeScreenState extends State<HomeScreen> {
                         icon: Icons.assignment_outlined,
                         label: "Bảng điểm",
                         onTap: () {
-                          // TODO
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ScorePage(username: widget.username),
+                            ),
+                          );
                         },
                       ),
                       _MenuTile(

@@ -31,6 +31,10 @@ namespace MyFSchool.Api.Data
         public DbSet<Club> Clubs { get; set; }
         public DbSet<ClubRegistration> ClubRegistrations { get; set; }
 
+        public DbSet<StudentScore> StudentScores { get; set; }
+
+
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
