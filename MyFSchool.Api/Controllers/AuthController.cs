@@ -46,6 +46,52 @@ namespace MyFSchool.Api.Controllers
                 return Unauthorized(new { message = "Sai số điện thoại hoặc mật khẩu" });
             }
 
+            string? studentName = null;
+            string? studentCode = null;
+            string? className = null;
+            string? campusName = null;
+
+            var parent = await _context.Parents
+                .FirstOrDefaultAsync(p => p.UserId == user.Id);
+
+            if (parent != null)
+            {
+                var parentStudent = await _context.ParentStudents
+                    .FirstOrDefaultAsync(ps => ps.ParentId == parent.Id);
+
+                if (parentStudent != null)
+                {
+                    var student = await _context.Students
+                        .FirstOrDefaultAsync(s => s.Id == parentStudent.StudentId);
+
+                    if (student != null)
+                    {
+                        studentName = student.FullName;
+                        studentCode = student.StudentCode;
+                        campusName = "Hola";
+
+                        if (student.CurrentClassId != null)
+                        {
+                            var conn = _context.Database.GetDbConnection();
+                            await conn.OpenAsync();
+
+                            await using var cmd = conn.CreateCommand();
+                            cmd.CommandText = "SELECT class_name FROM classes WHERE id = @id";
+
+                            var param = cmd.CreateParameter();
+                            param.ParameterName = "@id";
+                            param.Value = student.CurrentClassId;
+                            cmd.Parameters.Add(param);
+
+                            var result = await cmd.ExecuteScalarAsync();
+                            className = result?.ToString();
+
+                            await conn.CloseAsync();
+                        }
+                    }
+                }
+            }
+
             var response = new LoginResponse
             {
                 Id = user.Id,
@@ -53,7 +99,12 @@ namespace MyFSchool.Api.Controllers
                 FullName = user.FullName,
                 Email = user.Email,
                 Status = user.Status,
-                Message = "Đăng nhập thành công"
+                Message = "Đăng nhập thành công",
+
+                StudentName = studentName,
+                StudentCode = studentCode,
+                ClassName = className,
+                CampusName = campusName
             };
 
             return Ok(response);

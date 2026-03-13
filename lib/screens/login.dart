@@ -69,8 +69,11 @@ class _LoginPageState extends State<LoginPage> {
         context,
         MaterialPageRoute(
           builder: (_) => HomeScreen(
-            fullName: result.fullName,
-            username: result.username,
+            studentName: result.studentName ?? result.fullName,
+            studentCode: result.studentCode ?? '',
+            className: result.className ?? '',
+            campusName: result.campusName ?? '',
+            parentUsername: result.username,
           ),
         ),
       );

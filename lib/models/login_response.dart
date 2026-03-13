@@ -6,6 +6,11 @@ class LoginResponse {
   final String status;
   final String message;
 
+  final String? studentName;
+  final String? studentCode;
+  final String? className;
+  final String? campusName;
+
   LoginResponse({
     required this.id,
     required this.username,
@@ -13,6 +18,10 @@ class LoginResponse {
     this.email,
     required this.status,
     required this.message,
+    this.studentName,
+    this.studentCode,
+    this.className,
+    this.campusName,
   });
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
@@ -23,6 +32,10 @@ class LoginResponse {
       email: json['email']?.toString(),
       status: json['status']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
+      studentName: json['studentName']?.toString(),
+      studentCode: json['studentCode']?.toString(),
+      className: json['className']?.toString(),
+      campusName: json['campusName']?.toString(),
     );
   }
 }

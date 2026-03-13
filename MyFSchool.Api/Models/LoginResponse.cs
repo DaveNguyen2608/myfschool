@@ -8,5 +8,10 @@ namespace MyFSchool.Api.Models
         public string? Email { get; set; }
         public string Status { get; set; } = "";
         public string Message { get; set; } = "";
+
+        public string? StudentName { get; set; }
+        public string? StudentCode { get; set; }
+        public string? ClassName { get; set; }
+        public string? CampusName { get; set; }
     }
 }

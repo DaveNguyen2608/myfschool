@@ -33,7 +33,7 @@ namespace MyFSchool.Api.Data
 
         public DbSet<StudentScore> StudentScores { get; set; }
 
-
+    public DbSet<Announcement> Announcements { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -213,6 +213,22 @@ namespace MyFSchool.Api.Data
                 entity.Property(e => e.TeacherId).HasColumnName("teacher_id");
                 entity.Property(e => e.RoomName).HasColumnName("room_name");
                 entity.Property(e => e.Note).HasColumnName("note");
+            });
+
+            modelBuilder.Entity<Announcement>(entity =>
+            {
+                entity.ToTable("announcements");
+
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Title).HasColumnName("title");
+                entity.Property(e => e.Description).HasColumnName("description");
+                entity.Property(e => e.ImageUrl).HasColumnName("image_url");
+                entity.Property(e => e.StartDate).HasColumnName("start_date");
+                entity.Property(e => e.EndDate).HasColumnName("end_date");
+                entity.Property(e => e.IsActive).HasColumnName("is_active");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             });
         }
     }
