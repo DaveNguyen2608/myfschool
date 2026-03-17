@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "hysy58ATDVs=",
+  "dgSpecHash": "RSuIAqH6gSs=",
   "success": true,
   "projectFilePath": "D:\\myfschool\\MyFSchool.Api\\MyFSchool.Api.csproj",
   "expectedPackageFiles": [
@@ -39,6 +39,8 @@
     "C:\\Users\\admin\\.nuget\\packages\\microsoft.openapi\\1.6.22\\microsoft.openapi.1.6.22.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\microsoft.sqlserver.server\\1.0.0\\microsoft.sqlserver.server.1.0.0.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\microsoft.win32.systemevents\\6.0.0\\microsoft.win32.systemevents.6.0.0.nupkg.sha512",
+    "C:\\Users\\admin\\.nuget\\packages\\npgsql\\9.0.1\\npgsql.9.0.1.nupkg.sha512",
+    "C:\\Users\\admin\\.nuget\\packages\\npgsql.entityframeworkcore.postgresql\\9.0.1\\npgsql.entityframeworkcore.postgresql.9.0.1.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\swashbuckle.aspnetcore\\7.3.2\\swashbuckle.aspnetcore.7.3.2.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\swashbuckle.aspnetcore.swagger\\7.3.2\\swashbuckle.aspnetcore.swagger.7.3.2.nupkg.sha512",
     "C:\\Users\\admin\\.nuget\\packages\\swashbuckle.aspnetcore.swaggergen\\7.3.2\\swashbuckle.aspnetcore.swaggergen.7.3.2.nupkg.sha512",

@@ -109,5 +109,53 @@ namespace MyFSchool.Api.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Username) ||
+                string.IsNullOrWhiteSpace(request.CurrentPassword) ||
+                string.IsNullOrWhiteSpace(request.NewPassword) ||
+                string.IsNullOrWhiteSpace(request.ConfirmPassword))
+            {
+                return BadRequest(new { message = "Vui lòng nhập đầy đủ thông tin" });
+            }
+
+            if (request.NewPassword.Length < 6)
+            {
+                return BadRequest(new { message = "Mật khẩu mới cần ít nhất 6 ký tự" });
+            }
+
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return BadRequest(new { message = "Xác nhận mật khẩu mới chưa khớp" });
+            }
+
+            if (request.NewPassword == request.CurrentPassword)
+            {
+                return BadRequest(new { message = "Mật khẩu mới phải khác mật khẩu hiện tại" });
+            }
+
+            var username = request.Username.Trim();
+            var user = await _context.Users
+                .FirstOrDefaultAsync(x => x.Username == username && x.Status == "ACTIVE");
+
+            if (user == null)
+            {
+                return NotFound(new { message = "Không tìm thấy tài khoản" });
+            }
+
+            if (user.PasswordHash != request.CurrentPassword)
+            {
+                return Unauthorized(new { message = "Mật khẩu hiện tại không đúng" });
+            }
+
+            user.PasswordHash = request.NewPassword;
+            user.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Đổi mật khẩu thành công" });
+        }
     }
 }

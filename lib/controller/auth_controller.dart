@@ -13,4 +13,18 @@ class AuthController {
       password: password,
     );
   }
+
+  Future<String> changePassword({
+    required String username,
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    return await _repository.changePassword(
+      username: username,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
+  }
 }

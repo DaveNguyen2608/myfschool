@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+
+import 'change_password_page.dart';
 import 'login.dart';
+
 class ProfilePage extends StatelessWidget {
   final String studentName;
   final String parentUsername;
@@ -112,9 +115,7 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
@@ -143,7 +144,8 @@ class ProfilePage extends StatelessWidget {
                   _InfoRow(
                     icon: Icons.badge_outlined,
                     label: 'Tên học sinh',
-                    value: studentName.isNotEmpty ? studentName : 'Chưa có dữ liệu',
+                    value:
+                        studentName.isNotEmpty ? studentName : 'Chưa có dữ liệu',
                   ),
                   const SizedBox(height: 12),
                   _InfoRow(
@@ -166,9 +168,7 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 16),
-
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(10),
@@ -188,23 +188,26 @@ class ProfilePage extends StatelessWidget {
                   _ActionTile(
                     icon: Icons.edit_outlined,
                     title: 'Chỉnh sửa thông tin',
-                    onTap: () {
-
-                    },
+                    onTap: () {},
                   ),
                   _ActionTile(
                     icon: Icons.lock_outline_rounded,
                     title: 'Đổi mật khẩu',
                     onTap: () {
-
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChangePasswordPage(
+                            username: parentUsername,
+                          ),
+                        ),
+                      );
                     },
                   ),
                   _ActionTile(
                     icon: Icons.support_agent_outlined,
                     title: 'Hỗ trợ',
-                    onTap: () {
-
-                    },
+                    onTap: () {},
                   ),
                   _ActionTile(
                     icon: Icons.info_outline_rounded,
@@ -221,9 +224,7 @@ class ProfilePage extends StatelessWidget {
                 ],
               ),
             ),
-
             const SizedBox(height: 18),
-
             SizedBox(
               width: double.infinity,
               height: 50,
@@ -234,7 +235,7 @@ class ProfilePage extends StatelessWidget {
                     MaterialPageRoute(
                       builder: (_) => const LoginPage(),
                     ),
-                        (route) => false,
+                    (route) => false,
                   );
                 },
                 style: ElevatedButton.styleFrom(
