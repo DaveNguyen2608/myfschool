@@ -5,6 +5,7 @@ class LoginResponse {
   final String? email;
   final String status;
   final String message;
+  final String roleCode;
 
   final String? studentName;
   final String? studentCode;
@@ -18,6 +19,7 @@ class LoginResponse {
     this.email,
     required this.status,
     required this.message,
+    required this.roleCode,
     this.studentName,
     this.studentCode,
     this.className,
@@ -32,6 +34,7 @@ class LoginResponse {
       email: json['email']?.toString(),
       status: json['status']?.toString() ?? '',
       message: json['message']?.toString() ?? '',
+      roleCode: json['roleCode']?.toString() ?? '',
       studentName: json['studentName']?.toString(),
       studentCode: json['studentCode']?.toString(),
       className: json['className']?.toString(),

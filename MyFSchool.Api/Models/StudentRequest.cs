@@ -15,5 +15,9 @@ namespace MyFSchool.Api.Models
         public int? TotalDays { get; set; }
         public string Status { get; set; } = "PENDING";
         public DateTime SubmittedAt { get; set; }
+        public DateTime? ApprovedAt { get; set; }
+        public long? ApprovedBy { get; set; }
+        public string? RejectionReason { get; set; }
     }
 }
+

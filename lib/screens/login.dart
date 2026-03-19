@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../controller/auth_controller.dart';
 import 'forgot_password.dart';
 import 'homescreen.dart';
@@ -65,14 +66,21 @@ class _LoginPageState extends State<LoginPage> {
 
       if (!mounted) return;
 
+      final roleCode = result.roleCode.toUpperCase();
+      final isTeacher = roleCode == 'TEACHER';
+      final campusName = (result.campusName != null && result.campusName!.trim().isNotEmpty)
+          ? result.campusName!
+          : (isTeacher ? 'Hola' : '');
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (_) => HomeScreen(
-            studentName: result.studentName ?? result.fullName,
-            studentCode: result.studentCode ?? '',
+            isTeacher: isTeacher,
+            studentName: isTeacher ? result.fullName : (result.studentName ?? result.fullName),
+            studentCode: isTeacher ? '' : (result.studentCode ?? ''),
             className: result.className ?? '',
-            campusName: result.campusName ?? '',
+            campusName: campusName,
             parentUsername: result.username,
           ),
         ),
@@ -86,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _error = errorMsg;
       });
-    } catch (e) {
+    } catch (_) {
       setState(() {
         _error = 'Có lỗi xảy ra';
       });
@@ -152,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 26),
               const Text(
-                "Đăng Nhập",
+                'Đăng nhập',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w800,
@@ -161,12 +169,12 @@ class _LoginPageState extends State<LoginPage> {
               ),
               const SizedBox(height: 6),
               const Text(
-                "Ứng dụng thông tin đào tạo FPT Schools",
+                'Ứng dụng thông tin đào tạo FPT Schools',
                 style: TextStyle(color: Colors.orange, fontSize: 14),
               ),
               const SizedBox(height: 26),
 
-              _label("Số điện thoại"),
+              _label('Số điện thoại'),
               TextField(
                 controller: _phoneCtrl,
                 keyboardType: TextInputType.phone,
@@ -174,17 +182,17 @@ class _LoginPageState extends State<LoginPage> {
                   FilteringTextInputFormatter.digitsOnly,
                   LengthLimitingTextInputFormatter(10),
                 ],
-                decoration: _underlineDec(hint: "Nhập số điện thoại"),
+                decoration: _underlineDec(hint: 'Nhập số điện thoại'),
               ),
 
               const SizedBox(height: 18),
 
-              _label("Mật khẩu"),
+              _label('Mật khẩu'),
               TextField(
                 controller: _passCtrl,
                 obscureText: _obscure,
                 decoration: _underlineDec(
-                  hint: "Nhập mật khẩu",
+                  hint: 'Nhập mật khẩu',
                   suffixIcon: IconButton(
                     onPressed: () => setState(() => _obscure = !_obscure),
                     icon: Icon(
@@ -216,20 +224,20 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
-                  )
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2.5,
+                          ),
+                        )
                       : const Text(
-                    "Đăng nhập",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                    ),
-                  ),
+                          'Đăng nhập',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
+                          ),
+                        ),
                 ),
               ),
 
@@ -248,7 +256,7 @@ class _LoginPageState extends State<LoginPage> {
                       );
                     },
                     child: const Text(
-                      "Quên mật khẩu?",
+                      'Quên mật khẩu?',
                       style: TextStyle(
                         color: Colors.black38,
                         fontWeight: FontWeight.w600,
@@ -263,7 +271,7 @@ class _LoginPageState extends State<LoginPage> {
               const Padding(
                 padding: EdgeInsets.only(bottom: 10),
                 child: Text(
-                  "Copyright by TienNHHE182008",
+                  'Copyright by TienNHHE182008',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     color: Colors.grey,

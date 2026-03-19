@@ -10,6 +10,9 @@ namespace MyFSchool.Api.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
+        private const string ParentRoleCode = "PARENT";
+        private const string TeacherRoleCode = "TEACHER";
+
         private readonly MyFSchoolDbContext _context;
 
         public AuthController(MyFSchoolDbContext context)
@@ -36,59 +39,73 @@ namespace MyFSchool.Api.Controllers
             var user = await _context.Users
                 .FirstOrDefaultAsync(x => x.Phone == phone && x.Status == "ACTIVE");
 
-            if (user == null)
+            if (user == null || user.PasswordHash != request.Password)
             {
                 return Unauthorized(new { message = "Sai số điện thoại hoặc mật khẩu" });
             }
 
-            if (user.PasswordHash != request.Password)
-            {
-                return Unauthorized(new { message = "Sai số điện thoại hoặc mật khẩu" });
-            }
+            var roleCodes = await (
+                from ur in _context.UserRoles
+                join role in _context.Roles on ur.RoleId equals role.Id
+                where ur.UserId == user.Id
+                select role.Code
+            ).ToListAsync();
+
+            var roleCode = ResolvePrimaryRole(roleCodes);
 
             string? studentName = null;
             string? studentCode = null;
             string? className = null;
             string? campusName = null;
 
-            var parent = await _context.Parents
-                .FirstOrDefaultAsync(p => p.UserId == user.Id);
-
-            if (parent != null)
+            if (roleCode == ParentRoleCode)
             {
-                var parentStudent = await _context.ParentStudents
-                    .FirstOrDefaultAsync(ps => ps.ParentId == parent.Id);
+                var parent = await _context.Parents
+                    .FirstOrDefaultAsync(p => p.UserId == user.Id);
 
-                if (parentStudent != null)
+                if (parent != null)
                 {
-                    var student = await _context.Students
-                        .FirstOrDefaultAsync(s => s.Id == parentStudent.StudentId);
+                    var parentStudent = await _context.ParentStudents
+                        .Where(ps => ps.ParentId == parent.Id)
+                        .OrderBy(ps => ps.StudentId)
+                        .FirstOrDefaultAsync();
 
-                    if (student != null)
+                    if (parentStudent != null)
                     {
-                        studentName = student.FullName;
-                        studentCode = student.StudentCode;
-                        campusName = "Hola";
+                        var student = await _context.Students
+                            .FirstOrDefaultAsync(s => s.Id == parentStudent.StudentId);
 
-                        if (student.CurrentClassId != null)
+                        if (student != null)
                         {
-                            var conn = _context.Database.GetDbConnection();
-                            await conn.OpenAsync();
+                            studentName = student.FullName;
+                            studentCode = student.StudentCode;
+                            campusName = "Hola";
 
-                            await using var cmd = conn.CreateCommand();
-                            cmd.CommandText = "SELECT class_name FROM classes WHERE id = @id";
-
-                            var param = cmd.CreateParameter();
-                            param.ParameterName = "@id";
-                            param.Value = student.CurrentClassId;
-                            cmd.Parameters.Add(param);
-
-                            var result = await cmd.ExecuteScalarAsync();
-                            className = result?.ToString();
-
-                            await conn.CloseAsync();
+                            if (student.CurrentClassId.HasValue)
+                            {
+                                className = await _context.SchoolClasses
+                                    .Where(c => c.Id == student.CurrentClassId.Value)
+                                    .Select(c => c.ClassName)
+                                    .FirstOrDefaultAsync();
+                            }
                         }
                     }
+                }
+            }
+            else if (roleCode == TeacherRoleCode)
+            {
+                campusName = "Hola";
+
+                var teacher = await _context.Teachers
+                    .FirstOrDefaultAsync(t => t.UserId == user.Id);
+
+                if (teacher != null)
+                {
+                    className = await _context.SchoolClasses
+                        .Where(c => c.HomeroomTeacherId == teacher.Id)
+                        .OrderBy(c => c.ClassName)
+                        .Select(c => c.ClassName)
+                        .FirstOrDefaultAsync();
                 }
             }
 
@@ -100,7 +117,7 @@ namespace MyFSchool.Api.Controllers
                 Email = user.Email,
                 Status = user.Status,
                 Message = "Đăng nhập thành công",
-
+                RoleCode = roleCode,
                 StudentName = studentName,
                 StudentCode = studentCode,
                 ClassName = className,
@@ -156,6 +173,26 @@ namespace MyFSchool.Api.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Đổi mật khẩu thành công" });
+        }
+
+        private static string ResolvePrimaryRole(IEnumerable<string> roleCodes)
+        {
+            var roles = roleCodes
+                .Where(x => !string.IsNullOrWhiteSpace(x))
+                .Select(x => x.Trim().ToUpperInvariant())
+                .ToList();
+
+            if (roles.Contains(TeacherRoleCode))
+            {
+                return TeacherRoleCode;
+            }
+
+            if (roles.Contains(ParentRoleCode))
+            {
+                return ParentRoleCode;
+            }
+
+            return roles.FirstOrDefault() ?? string.Empty;
         }
     }
 }

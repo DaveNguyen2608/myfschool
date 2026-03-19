@@ -5,6 +5,14 @@ D:\myfschool\build_check\api\MyFSchool.Api.deps.json
 D:\myfschool\build_check\api\MyFSchool.Api.runtimeconfig.json
 D:\myfschool\build_check\api\MyFSchool.Api.dll
 D:\myfschool\build_check\api\MyFSchool.Api.pdb
+D:\myfschool\build_check\api_out\appsettings.Development.json
+D:\myfschool\build_check\api_out\appsettings.json
+D:\myfschool\build_check\api_out\MyFSchool.Api.staticwebassets.endpoints.json
+D:\myfschool\build_check\api_out\MyFSchool.Api.exe
+D:\myfschool\build_check\api_out\MyFSchool.Api.deps.json
+D:\myfschool\build_check\api_out\MyFSchool.Api.runtimeconfig.json
+D:\myfschool\build_check\api_out\MyFSchool.Api.dll
+D:\myfschool\build_check\api_out\MyFSchool.Api.pdb
 D:\myfschool\MyFSchool.Api\bin\Debug\net9.0\appsettings.Development.json
 D:\myfschool\MyFSchool.Api\bin\Debug\net9.0\appsettings.json
 D:\myfschool\MyFSchool.Api\bin\Debug\net9.0\MyFSchool.Api.staticwebassets.endpoints.json

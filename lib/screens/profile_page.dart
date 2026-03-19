@@ -9,6 +9,7 @@ class ProfilePage extends StatelessWidget {
   final String className;
   final String studentCode;
   final String campusName;
+  final bool isTeacher;
 
   const ProfilePage({
     super.key,
@@ -17,7 +18,38 @@ class ProfilePage extends StatelessWidget {
     required this.className,
     required this.studentCode,
     required this.campusName,
+    this.isTeacher = false,
   });
+
+  String get _displayName {
+    if (studentName.trim().isNotEmpty) {
+      return studentName.trim();
+    }
+    return isTeacher ? 'Giáo viên' : 'Học sinh';
+  }
+
+  String get _accountChip {
+    return isTeacher ? 'Tài khoản giáo viên' : 'Tài khoản phụ huynh';
+  }
+
+  String get _infoTitle {
+    return isTeacher ? 'Thông tin giáo viên' : 'Thông tin học sinh';
+  }
+
+  String get _nameLabel {
+    return isTeacher ? 'Tên giáo viên' : 'Tên học sinh';
+  }
+
+  String get _codeLabel {
+    return isTeacher ? 'Tài khoản' : 'Mã học sinh';
+  }
+
+  String get _codeValue {
+    if (isTeacher) {
+      return parentUsername.trim().isNotEmpty ? parentUsername : '--';
+    }
+    return studentCode.trim().isNotEmpty ? studentCode : '--';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +108,7 @@ class ProfilePage extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    studentName.isNotEmpty ? studentName : 'Học sinh',
+                    _displayName,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 20,
@@ -94,9 +126,9 @@ class ProfilePage extends StatelessWidget {
                       color: const Color(0xFFFFF4EA),
                       borderRadius: BorderRadius.circular(999),
                     ),
-                    child: const Text(
-                      'Tài khoản phụ huynh',
-                      style: TextStyle(
+                    child: Text(
+                      _accountChip,
+                      style: const TextStyle(
                         color: orange,
                         fontWeight: FontWeight.w700,
                         fontSize: 12.5,
@@ -133,9 +165,9 @@ class ProfilePage extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Thông tin học sinh',
-                    style: TextStyle(
+                  Text(
+                    _infoTitle,
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
                     ),
@@ -143,27 +175,26 @@ class ProfilePage extends StatelessWidget {
                   const SizedBox(height: 14),
                   _InfoRow(
                     icon: Icons.badge_outlined,
-                    label: 'Tên học sinh',
-                    value:
-                        studentName.isNotEmpty ? studentName : 'Chưa có dữ liệu',
+                    label: _nameLabel,
+                    value: _displayName,
                   ),
                   const SizedBox(height: 12),
                   _InfoRow(
                     icon: Icons.class_outlined,
                     label: 'Lớp',
-                    value: className,
+                    value: className.trim().isNotEmpty ? className : '--',
                   ),
                   const SizedBox(height: 12),
                   _InfoRow(
                     icon: Icons.qr_code_2_outlined,
-                    label: 'Mã học sinh',
-                    value: studentCode,
+                    label: _codeLabel,
+                    value: _codeValue,
                   ),
                   const SizedBox(height: 12),
                   _InfoRow(
                     icon: Icons.location_on_outlined,
                     label: 'Cơ sở',
-                    value: campusName,
+                    value: campusName.trim().isNotEmpty ? campusName : '--',
                   ),
                 ],
               ),
@@ -215,7 +246,7 @@ class ProfilePage extends StatelessWidget {
                     onTap: () {
                       showAboutDialog(
                         context: context,
-                        applicationName: 'MyFSchool Parent',
+                        applicationName: 'MyFSchool',
                         applicationVersion: '1.0.0',
                         applicationLegalese: '© TienNHHE182008',
                       );

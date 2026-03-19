@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'schedule.dart';
+
 import 'club_page.dart';
-import 'score_page.dart';
+import 'contact_screen.dart';
 import 'profile_page.dart';
-import 'package:carousel_slider/carousel_slider.dart';
-import '../models/announcement_item.dart';
-import '../services/announcement_service.dart';
+import 'request_screen.dart';
+import 'schedule.dart';
+import 'score_page.dart';
+import 'teacher_score_page.dart';
+
 class HomeScreen extends StatefulWidget {
   final String studentName;
   final String studentCode;
   final String className;
   final String campusName;
   final String parentUsername;
+  final bool isTeacher;
 
   const HomeScreen({
     super.key,
@@ -20,6 +23,7 @@ class HomeScreen extends StatefulWidget {
     required this.className,
     required this.campusName,
     required this.parentUsername,
+    this.isTeacher = false,
   });
 
   @override
@@ -29,10 +33,124 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
 
+  void _showComingSoon() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Chức năng đang phát triển')),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     const bg = Color(0xFFF3F3F3);
     const orange = Color(0xFFFF7A00);
+    final isTeacher = widget.isTeacher;
+
+    final menuItems = [
+      _MenuData(
+        icon: Icons.send_rounded,
+        label: isTeacher ? 'Xem đơn' : 'Gửi đơn',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => RequestScreen(
+                mode: isTeacher ? UserViewMode.teacher : UserViewMode.parent,
+                username: widget.parentUsername,
+              ),
+            ),
+          );
+        },
+      ),
+      _MenuData(icon: Icons.event, label: 'Sự kiện', onTap: _showComingSoon),
+      _MenuData(
+        icon: Icons.science_outlined,
+        label: 'Câu lạc bộ',
+        onTap: () {
+          if (isTeacher) {
+            _showComingSoon();
+            return;
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ClubPage(username: widget.parentUsername),
+            ),
+          );
+        },
+      ),
+      _MenuData(
+        icon: Icons.calendar_month_outlined,
+        label: 'Lịch học',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => SchedulePage(
+                username: widget.parentUsername,
+                displayName: widget.studentName,
+                className: widget.className,
+                isTeacher: isTeacher,
+              ),
+            ),
+          );
+        },
+      ),
+      _MenuData(
+        icon: Icons.call,
+        label: 'Liên lạc',
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ContactScreen(
+                username: widget.parentUsername,
+                studentName: widget.studentName,
+                className: widget.className,
+                isTeacher: isTeacher,
+              ),
+            ),
+          );
+        },
+      ),
+      _MenuData(icon: Icons.edit_document, label: 'KT&KL', onTap: _showComingSoon),
+      _MenuData(
+        icon: Icons.assignment_outlined,
+        label: 'Bảng điểm',
+        onTap: () {
+          if (isTeacher) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => TeacherScorePage(username: widget.parentUsername),
+              ),
+            );
+            return;
+          }
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ScorePage(username: widget.parentUsername),
+            ),
+          );
+        },
+      ),
+      _MenuData(
+        icon: Icons.directions_bus_filled_outlined,
+        label: 'Đưa đón',
+        onTap: _showComingSoon,
+      ),
+    ];
+
+    final displayNameLabel = isTeacher ? 'Tên giáo viên: ' : 'Tên học sinh: ';
+    final displayNameValue =
+        widget.studentName.isNotEmpty ? widget.studentName : 'Chưa có dữ liệu';
+
+    final codeLabel = isTeacher ? 'Tài khoản: ' : 'MSHS: ';
+    final codeValue = isTeacher
+        ? widget.parentUsername
+        : (widget.studentCode.isNotEmpty ? widget.studentCode : '--');
 
     return Scaffold(
       backgroundColor: bg,
@@ -49,7 +167,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       InkWell(
                         borderRadius: BorderRadius.circular(999),
-                        onTap: () {},
+                        onTap: _showComingSoon,
                         child: Container(
                           width: 42,
                           height: 42,
@@ -69,18 +187,13 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      const Text(
-                        "Tên học sinh: ",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                        ),
+                      Text(
+                        displayNameLabel,
+                        style: const TextStyle(fontSize: 13, color: Colors.black87),
                       ),
                       Expanded(
                         child: Text(
-                          widget.studentName.isNotEmpty
-                              ? widget.studentName
-                              : "Chưa có dữ liệu",
+                          displayNameValue,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -94,39 +207,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       const Text(
-                        "Lớp: ",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                        ),
+                        'Lớp: ',
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
                       ),
                       Text(
-                        widget.className.isNotEmpty
-                            ? widget.className
-                            : "--",
+                        widget.className.isNotEmpty ? widget.className : '--',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(width: 10),
-                      const Text(
-                        "·",
-                        style: TextStyle(color: Colors.black54),
-                      ),
+                      const Text('·', style: TextStyle(color: Colors.black54)),
                       const SizedBox(width: 10),
-                      const Text(
-                        "MSHS: ",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                        ),
+                      Text(
+                        codeLabel,
+                        style: const TextStyle(fontSize: 13, color: Colors.black87),
                       ),
                       Expanded(
                         child: Text(
-                          widget.studentCode.isNotEmpty
-                              ? widget.studentCode
-                              : "--",
+                          codeValue,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -140,17 +240,12 @@ class _HomeScreenState extends State<HomeScreen> {
                   Row(
                     children: [
                       const Text(
-                        "Cơ sở: ",
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.black87,
-                        ),
+                        'Cơ sở: ',
+                        style: TextStyle(fontSize: 13, color: Colors.black87),
                       ),
                       Expanded(
                         child: Text(
-                          widget.campusName.isNotEmpty
-                              ? widget.campusName
-                              : "--",
+                          widget.campusName.isNotEmpty ? widget.campusName : '--',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -167,82 +262,24 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 14),
               child: Column(
                 children: [
-                  GridView.count(
-                    crossAxisCount: 4,
+                  GridView.builder(
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 12,
-                    crossAxisSpacing: 12,
-                    childAspectRatio: 0.80,
-                    children: [
-                      _MenuTile(
-                        icon: Icons.send_rounded,
-                        label: "Gửi đơn",
-                        onTap: () {},
-                      ),
-                      _MenuTile(
-                        icon: Icons.event,
-                        label: "Sự kiện",
-                        onTap: () {},
-                      ),
-                      _MenuTile(
-                        icon: Icons.science_outlined,
-                        label: "Câu lạc bộ",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ClubPage(
-                                username: widget.parentUsername,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _MenuTile(
-                        icon: Icons.calendar_month_outlined,
-                        label: "Lịch học",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => SchedulePage(
-                                username: widget.parentUsername,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _MenuTile(
-                        icon: Icons.call,
-                        label: "Liên lạc",
-                        onTap: () {},
-                      ),
-                      _MenuTile(
-                        icon: Icons.edit_document,
-                        label: "KT&KL",
-                        onTap: () {},
-                      ),
-                      _MenuTile(
-                        icon: Icons.assignment_outlined,
-                        label: "Bảng điểm",
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ScorePage(
-                                username: widget.parentUsername,
-                              ),
-                            ),
-                          );
-                        },
-                      ),
-                      _MenuTile(
-                        icon: Icons.directions_bus_filled_outlined,
-                        label: "Đưa đón",
-                        onTap: () {},
-                      ),
-                    ],
+                    itemCount: menuItems.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 4,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      mainAxisExtent: 110,
+                    ),
+                    itemBuilder: (context, index) {
+                      final item = menuItems[index];
+                      return _MenuTile(
+                        icon: item.icon,
+                        label: item.label,
+                        onTap: item.onTap,
+                      );
+                    },
                   ),
                   const SizedBox(height: 10),
                   Center(
@@ -280,14 +317,14 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: Image.asset(
-                          "assets/images/thong-bao-nghi-tet-nguyen-dan-2026-3.png",
+                          'assets/images/thong-bao-nghi-tet-nguyen-dan-2026-3.png',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
                               color: Colors.white,
                               alignment: Alignment.center,
                               child: const Text(
-                                "Không tìm thấy ảnh banner",
+                                'Không tìm thấy ảnh banner',
                                 style: TextStyle(
                                   fontSize: 14,
                                   fontWeight: FontWeight.w600,
@@ -306,9 +343,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      child: const Text(
-                        "[P.TC&QLDT] TB V/v nghỉ lễ Tết Nguyên Đán, Cung chúc Tân Xuân...",
-                        style: TextStyle(
+                      child: Text(
+                        isTeacher
+                            ? 'Màn hình giáo viên đã sẵn sàng. Chọn "Xem đơn" để xử lý đơn xin phép.'
+                            : '[P.TC&QLĐT] TB V/v nghỉ lễ Tết Nguyên Đán, cung chúc tân xuân...',
+                        style: const TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
                         ),
@@ -347,19 +386,19 @@ class _HomeScreenState extends State<HomeScreen> {
           items: const [
             BottomNavigationBarItem(
               icon: Icon(Icons.home_rounded),
-              label: "Trang chủ",
+              label: 'Trang chủ',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.bar_chart_rounded),
-              label: "Thống kê",
+              label: 'Thống kê',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.chat_bubble_outline_rounded),
-              label: "Chat",
+              label: 'Chat',
             ),
             BottomNavigationBarItem(
               icon: Icon(Icons.person_outline_rounded),
-              label: "Cá nhân",
+              label: 'Cá nhân',
             ),
           ],
         ),
@@ -378,6 +417,7 @@ class _HomeScreenState extends State<HomeScreen> {
             className: widget.className,
             studentCode: widget.studentCode,
             campusName: widget.campusName,
+            isTeacher: widget.isTeacher,
           ),
         ),
       );
@@ -385,18 +425,24 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     if (i == 1 || i == 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Chức năng đang phát triển'),
-        ),
-      );
+      _showComingSoon();
       return;
     }
 
     setState(() => _currentIndex = i);
   }
+}
 
+class _MenuData {
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
 
+  _MenuData({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 }
 
 class _Avatar extends StatelessWidget {
@@ -458,11 +504,7 @@ class _MenuTile extends StatelessWidget {
                 ),
               ],
             ),
-            child: Icon(
-              icon,
-              color: orange,
-              size: 26,
-            ),
+            child: Icon(icon, color: orange, size: 26),
           ),
           const SizedBox(height: 6),
           Text(
