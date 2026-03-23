@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import 'chat_list_page.dart';
 import 'club_page.dart';
 import 'contact_screen.dart';
 import 'profile_page.dart';
@@ -317,7 +318,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       child: AspectRatio(
                         aspectRatio: 16 / 9,
                         child: Image.asset(
-                          'assets/images/thong-bao-nghi-tet-nguyen-dan-2026-3.png',
+                          'assets/images/thong-bao-ngh?-tet-nguyen-dan-2026-3.png',
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Container(
@@ -424,7 +425,20 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
-    if (i == 1 || i == 2) {
+    if (i == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatListPage(
+            username: widget.parentUsername,
+            isTeacher: widget.isTeacher,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (i == 1) {
       _showComingSoon();
       return;
     }
@@ -522,3 +536,4 @@ class _MenuTile extends StatelessWidget {
     );
   }
 }
+

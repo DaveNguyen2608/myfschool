@@ -882,3 +882,4 @@ class _ContactRow extends StatelessWidget {
     );
   }
 }
+

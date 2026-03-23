@@ -3,8 +3,8 @@ namespace MyFSchool.Api.Models
     public class StudentRequest
     {
         public long Id { get; set; }
-        public long StudentId { get; set; }
-        public long ParentId { get; set; }
+        public long StudentUserId { get; set; }
+        public long ParentUserId { get; set; }
         public long RequestTypeId { get; set; }
         public string Title { get; set; } = "";
         public string Reason { get; set; } = "";

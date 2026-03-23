@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../services/api_service.dart';
 import 'change_password_page.dart';
 import 'login.dart';
 
@@ -260,7 +261,12 @@ class ProfilePage extends StatelessWidget {
               width: double.infinity,
               height: 50,
               child: ElevatedButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  await ApiService.clearAccessToken();
+                  if (!context.mounted) {
+                    return;
+                  }
+
                   Navigator.pushAndRemoveUntil(
                     context,
                     MaterialPageRoute(
@@ -404,3 +410,4 @@ class _ActionTile extends StatelessWidget {
     );
   }
 }
+

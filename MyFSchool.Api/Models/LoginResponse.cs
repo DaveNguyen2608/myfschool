@@ -9,6 +9,10 @@ namespace MyFSchool.Api.Models
         public string Status { get; set; } = "";
         public string Message { get; set; } = "";
         public string RoleCode { get; set; } = "";
+        public List<string> RoleCodes { get; set; } = new();
+        public string AccessToken { get; set; } = "";
+        public string TokenType { get; set; } = "Bearer";
+        public DateTime ExpiresAtUtc { get; set; }
 
         public string? StudentName { get; set; }
         public string? StudentCode { get; set; }

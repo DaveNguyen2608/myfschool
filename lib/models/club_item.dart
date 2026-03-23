@@ -1,4 +1,4 @@
-class ClubItem {
+﻿class ClubItem {
   final int id;
   final String clubCode;
   final String clubName;

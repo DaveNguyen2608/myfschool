@@ -1,4 +1,4 @@
-class ScoreItem {
+﻿class ScoreItem {
   final String subjectName;
   final double? averageScore;
   final String result;

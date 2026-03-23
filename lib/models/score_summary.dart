@@ -1,4 +1,4 @@
-class ScoreSummary {
+﻿class ScoreSummary {
   final String academicYear;
   final String semester;
   final double averageScore;

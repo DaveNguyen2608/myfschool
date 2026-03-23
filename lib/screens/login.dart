@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../controller/auth_controller.dart';
+import '../services/api_service.dart';
 import 'forgot_password.dart';
 import 'homescreen.dart';
 
@@ -65,6 +66,15 @@ class _LoginPageState extends State<LoginPage> {
       );
 
       if (!mounted) return;
+
+      if (result.accessToken.trim().isEmpty) {
+        setState(() {
+          _error = 'Đăng nhập thất bại: thiếu token xác thực';
+        });
+        return;
+      }
+
+      await ApiService.setAccessToken(result.accessToken);
 
       final roleCode = result.roleCode.toUpperCase();
       final isTeacher = roleCode == 'TEACHER';
@@ -286,3 +296,4 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 }
+

@@ -1,16 +1,20 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using MyFSchool.Api.Data;
 using MyFSchool.Api.Models;
+using MyFSchool.Api.Security;
 
 namespace MyFSchool.Api.Controllers
 {
     [ApiController]
+    [Authorize(Roles = "PARENT,TEACHER,STUDENT")]
     [Route("api/[controller]")]
     public class ScheduleController : ControllerBase
     {
         private const string ParentRoleCode = "PARENT";
         private const string TeacherRoleCode = "TEACHER";
+        private const string StudentRoleCode = "STUDENT";
 
         private static readonly DateTime DefaultAcademicStartDate = new(2025, 9, 5);
         private static readonly DateTime DefaultAcademicEndDate = new(2026, 5, 31);
@@ -23,7 +27,7 @@ namespace MyFSchool.Api.Controllers
         }
 
         [HttpGet("weekly")]
-        public async Task<IActionResult> GetWeeklySchedule([FromQuery] string username)
+        public async Task<IActionResult> GetWeeklySchedule([FromQuery] string? username)
         {
             var (scope, error) = await ResolveUserScope(username);
             if (error != null)
@@ -53,7 +57,7 @@ namespace MyFSchool.Api.Controllers
                 academicYearId: academic.AcademicYearId,
                 semesterId: academic.SemesterId,
                 dayOfWeek: null,
-                homeroomTeacherId: scope.HomeroomTeacherId,
+                homeroomTeacherId: scope.HomeroomTeacherUserId,
                 contactAliases: contactAliases);
 
             return Ok(new
@@ -69,7 +73,7 @@ namespace MyFSchool.Api.Controllers
 
         [HttpGet("by-date")]
         public async Task<IActionResult> GetScheduleByDate(
-            [FromQuery] string username,
+            [FromQuery] string? username,
             [FromQuery] DateTime date,
             [FromQuery] long? classId)
         {
@@ -164,7 +168,7 @@ namespace MyFSchool.Api.Controllers
                 academicYearId: academic.AcademicYearId,
                 semesterId: academic.SemesterId,
                 dayOfWeek: dayOfWeek,
-                homeroomTeacherId: scope.HomeroomTeacherId,
+                homeroomTeacherId: scope.HomeroomTeacherUserId,
                 contactAliases: contactAliases);
 
             if (periods.Count == 0)
@@ -174,7 +178,7 @@ namespace MyFSchool.Api.Controllers
                     academicYearId: null,
                     semesterId: null,
                     dayOfWeek: dayOfWeek,
-                    homeroomTeacherId: scope.HomeroomTeacherId,
+                    homeroomTeacherId: scope.HomeroomTeacherUserId,
                     contactAliases: contactAliases);
             }
 
@@ -195,16 +199,24 @@ namespace MyFSchool.Api.Controllers
             });
         }
 
-        private async Task<(UserScheduleScope? Scope, IActionResult? Error)> ResolveUserScope(string username)
+        private async Task<(UserScheduleScope? Scope, IActionResult? Error)> ResolveUserScope(string? requestedUsername)
         {
-            if (string.IsNullOrWhiteSpace(username))
+            var tokenUserId = User.GetUserId();
+            var tokenUsername = User.GetUsername();
+
+            if (!tokenUserId.HasValue || string.IsNullOrWhiteSpace(tokenUsername))
             {
-                return (null, BadRequest(new { message = "Tên đăng nhập không được để trống" }));
+                return (null, Unauthorized(new { message = "Không xác định được tài khoản từ token" }));
             }
 
-            var normalizedUsername = username.Trim();
+            if (!string.IsNullOrWhiteSpace(requestedUsername) &&
+                !string.Equals(requestedUsername.Trim(), tokenUsername, StringComparison.OrdinalIgnoreCase))
+            {
+                return (null, StatusCode(403, new { message = "Không thể thao tác thay cho tài khoản khác" }));
+            }
+
             var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Username == normalizedUsername && x.Status == "ACTIVE");
+                .FirstOrDefaultAsync(x => x.Id == tokenUserId.Value && x.Status == "ACTIVE");
 
             if (user == null)
             {
@@ -225,16 +237,8 @@ namespace MyFSchool.Api.Controllers
 
             if (normalizedRoleCodes.Contains(TeacherRoleCode))
             {
-                var teacher = await _context.Teachers
-                    .FirstOrDefaultAsync(x => x.UserId == user.Id);
-
-                if (teacher == null)
-                {
-                    return (null, NotFound(new { message = "Không tìm thấy hồ sơ giáo viên" }));
-                }
-
                 var schoolClass = await _context.SchoolClasses
-                    .Where(x => x.HomeroomTeacherId == teacher.Id)
+                    .Where(x => x.HomeroomTeacherUserId == user.Id)
                     .OrderBy(x => x.ClassName)
                     .FirstOrDefaultAsync();
 
@@ -248,25 +252,17 @@ namespace MyFSchool.Api.Controllers
                     UserId = user.Id,
                     ClassId = schoolClass.Id,
                     OwnerName = user.FullName,
-                    HomeroomTeacherId = schoolClass.HomeroomTeacherId,
+                    HomeroomTeacherUserId = schoolClass.HomeroomTeacherUserId,
                     IsTeacher = true
                 }, null);
             }
 
             if (normalizedRoleCodes.Contains(ParentRoleCode))
             {
-                var parent = await _context.Parents
-                    .FirstOrDefaultAsync(x => x.UserId == user.Id);
-
-                if (parent == null)
-                {
-                    return (null, NotFound(new { message = "Không tìm thấy hồ sơ phụ huynh" }));
-                }
-
                 var student = await (
-                    from ps in _context.ParentStudents
-                    join s in _context.Students on ps.StudentId equals s.Id
-                    where ps.ParentId == parent.Id && s.Status == "ACTIVE"
+                    from rel in _context.ParentStudentRelationships
+                    join s in _context.Users on rel.StudentUserId equals s.Id
+                    where rel.ParentUserId == user.Id && s.Status == "ACTIVE"
                     orderby s.Id
                     select s
                 ).FirstOrDefaultAsync();
@@ -276,13 +272,14 @@ namespace MyFSchool.Api.Controllers
                     return (null, NotFound(new { message = "Phụ huynh chưa được liên kết với học sinh" }));
                 }
 
-                if (!student.CurrentClassId.HasValue)
+                var classId = await ResolveStudentClassId(student.Id);
+                if (!classId.HasValue)
                 {
                     return (null, BadRequest(new { message = "Học sinh chưa có lớp hiện tại" }));
                 }
 
                 var schoolClass = await _context.SchoolClasses
-                    .FirstOrDefaultAsync(x => x.Id == student.CurrentClassId.Value);
+                    .FirstOrDefaultAsync(x => x.Id == classId.Value);
 
                 if (schoolClass == null)
                 {
@@ -294,12 +291,66 @@ namespace MyFSchool.Api.Controllers
                     UserId = user.Id,
                     ClassId = schoolClass.Id,
                     OwnerName = student.FullName,
-                    HomeroomTeacherId = schoolClass.HomeroomTeacherId,
+                    HomeroomTeacherUserId = schoolClass.HomeroomTeacherUserId,
+                    IsTeacher = false
+                }, null);
+            }
+
+            if (normalizedRoleCodes.Contains(StudentRoleCode))
+            {
+                var classId = await ResolveStudentClassId(user.Id);
+                if (!classId.HasValue)
+                {
+                    return (null, BadRequest(new { message = "Học sinh chưa có lớp hiện tại" }));
+                }
+
+                var schoolClass = await _context.SchoolClasses
+                    .FirstOrDefaultAsync(x => x.Id == classId.Value);
+
+                if (schoolClass == null)
+                {
+                    return (null, NotFound(new { message = "Không tìm thấy lớp hiện tại của học sinh" }));
+                }
+
+                return (new UserScheduleScope
+                {
+                    UserId = user.Id,
+                    ClassId = schoolClass.Id,
+                    OwnerName = user.FullName,
+                    HomeroomTeacherUserId = schoolClass.HomeroomTeacherUserId,
                     IsTeacher = false
                 }, null);
             }
 
             return (null, StatusCode(403, new { message = "Tài khoản không có quyền xem lịch học" }));
+        }
+
+        private async Task<long?> ResolveStudentClassId(long studentUserId)
+        {
+            var activeAcademicYearId = await _context.AcademicYears
+                .Where(x => x.IsActive)
+                .Select(x => (long?)x.Id)
+                .FirstOrDefaultAsync();
+
+            var classId = await _context.ClassStudents
+                .Where(x =>
+                    x.StudentUserId == studentUserId &&
+                    (!activeAcademicYearId.HasValue || x.AcademicYearId == activeAcademicYearId.Value) &&
+                    !x.LeftAt.HasValue)
+                .OrderByDescending(x => x.AcademicYearId)
+                .ThenByDescending(x => x.JoinedAt)
+                .Select(x => (long?)x.ClassId)
+                .FirstOrDefaultAsync();
+
+            if (classId.HasValue)
+            {
+                return classId;
+            }
+
+            return await _context.Users
+                .Where(x => x.Id == studentUserId)
+                .Select(x => x.CurrentClassId)
+                .FirstOrDefaultAsync();
         }
 
         private async Task<(AcademicContext? Context, IActionResult? Error)> ResolveAcademicContext()
@@ -359,7 +410,7 @@ namespace MyFSchool.Api.Controllers
                 .ThenBy(x => x.Id)
                 .Select(x => new ContactAliasRow
                 {
-                    TeacherId = x.TeacherId,
+                    TeacherId = x.TeacherUserId,
                     SubjectId = x.SubjectId,
                     Alias = x.Note
                 })
@@ -378,14 +429,14 @@ namespace MyFSchool.Api.Controllers
                 from tt in _context.Timetables
                 join slot in _context.ScheduleSlots on tt.SlotId equals slot.Id
                 join sub in _context.Subjects on tt.SubjectId equals sub.Id
-                join teacher in _context.Teachers on tt.TeacherId equals teacher.Id
-                join teacherUser in _context.Users on teacher.UserId equals teacherUser.Id
+                join teacherUser in _context.Users on tt.TeacherUserId equals (long?)teacherUser.Id into teacherJoin
+                from teacherUser in teacherJoin.DefaultIfEmpty()
                 where tt.ClassId == classId
                 select new RawScheduleItem
                 {
                     AcademicYearId = tt.AcademicYearId,
                     SemesterId = tt.SemesterId,
-                    TeacherId = tt.TeacherId,
+                    TeacherId = tt.TeacherUserId ?? 0,
                     SubjectId = tt.SubjectId,
                     DayOfWeek = tt.DayOfWeek,
                     PeriodNo = slot.PeriodNo,
@@ -394,11 +445,13 @@ namespace MyFSchool.Api.Controllers
                     SubjectName = sub.SubjectName,
                     RoomName = tt.RoomName,
                     TimetableAlias = tt.Note,
-                    TeacherName = teacherUser.FullName,
-                    TeacherPhone = teacherUser.Phone,
-                    TeacherEmail = !string.IsNullOrWhiteSpace(teacher.FptEmail)
-                        ? teacher.FptEmail
-                        : teacherUser.Email
+                    TeacherName = teacherUser != null ? teacherUser.FullName : string.Empty,
+                    TeacherPhone = teacherUser != null ? teacherUser.Phone : string.Empty,
+                    TeacherEmail = teacherUser != null
+                        ? (!string.IsNullOrWhiteSpace(teacherUser.FptEmail)
+                            ? teacherUser.FptEmail
+                            : teacherUser.Email)
+                        : string.Empty
                 };
 
             if (academicYearId.HasValue)
@@ -506,7 +559,7 @@ namespace MyFSchool.Api.Controllers
         public long UserId { get; set; }
         public long ClassId { get; set; }
         public string OwnerName { get; set; } = string.Empty;
-        public long? HomeroomTeacherId { get; set; }
+        public long? HomeroomTeacherUserId { get; set; }
         public bool IsTeacher { get; set; }
     }
 

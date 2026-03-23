@@ -4,10 +4,12 @@ namespace MyFSchool.Api.Models
     {
         public long Id { get; set; }
         public string Title { get; set; } = "";
-        public string? Description { get; set; }
-        public string? ImageUrl { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public string Content { get; set; } = "";
+        public string AnnouncementType { get; set; } = "";
+        public string TargetType { get; set; } = "";
+        public long? ClassId { get; set; }
+        public long? TargetUserId { get; set; }
+        public long CreatedBy { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
     }

@@ -1,27 +1,10 @@
-import 'package:dio/dio.dart';
-import 'package:flutter/foundation.dart';
+﻿import 'package:dio/dio.dart';
+
 import '../models/club_item.dart';
+import 'api_service.dart';
 
 class ClubService {
-  late final Dio _dio;
-
-  ClubService() {
-    final baseUrl = kIsWeb
-        ? 'http://localhost:5203/api'
-        : 'http://10.0.2.2:5203/api';
-
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: baseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-    );
-  }
+  final Dio _dio = ApiService.dio;
 
   Future<List<ClubItem>> getAllClubs(String username) async {
     final response = await _dio.get(

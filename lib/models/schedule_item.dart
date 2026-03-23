@@ -1,4 +1,4 @@
-class ScheduleItem {
+﻿class ScheduleItem {
   final int teacherId;
   final String teacherAlias;
   final String teacherName;
@@ -54,3 +54,4 @@ class ScheduleItem {
     return int.tryParse(value?.toString() ?? '') ?? 0;
   }
 }
+

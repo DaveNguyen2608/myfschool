@@ -13,11 +13,11 @@ namespace MyFSchool.Api.Models
         [Column("club_id")]
         public long ClubId { get; set; }
 
-        [Column("student_id")]
-        public long StudentId { get; set; }
+        [Column("student_user_id")]
+        public long StudentUserId { get; set; }
 
-        [Column("parent_id")]
-        public long ParentId { get; set; }
+        [Column("parent_user_id")]
+        public long ParentUserId { get; set; }
 
         [Column("registered_at")]
         public DateTime RegisteredAt { get; set; }

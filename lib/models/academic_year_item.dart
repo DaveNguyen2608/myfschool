@@ -1,4 +1,4 @@
-class AcademicYearItem {
+﻿class AcademicYearItem {
   final int id;
   final String name;
 

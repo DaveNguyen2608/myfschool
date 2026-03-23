@@ -1,38 +1,17 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:dio/dio.dart';
-import '../config/api_config.dart';
 import '../models/academic_year_item.dart';
 import '../models/score_item.dart';
 import '../models/score_summary.dart';
 import '../models/teacher_gradebook.dart';
 import '../models/teacher_score_meta.dart';
 import '../models/teacher_summary_item.dart';
+import 'api_service.dart';
 
 class ScoreService {
-  late final Dio _dio;
-
-  ScoreService() {
-    _dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.clubApiBaseUrl,
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-      ),
-    );
-
-    _dio.interceptors.add(
-      LogInterceptor(
-        request: true,
-        requestHeader: true,
-        requestBody: true,
-        responseBody: true,
-        error: true,
-      ),
-    );
-  }
+  final Dio _dio = ApiService.dio;
 
   Future<List<AcademicYearItem>> getAcademicYears() async {
     final response = await _dio.get('/scores/academic-years');
@@ -179,4 +158,182 @@ class ScoreService {
       },
     );
   }
+
+  Future<List<int>> exportTeacherScores({
+    required String username,
+    required int classId,
+    required int academicYearId,
+    int? semesterId,
+    String? semesterType,
+  }) async {
+    final response = await _dio.get<dynamic>(
+      '/scores/teacher/export',
+      queryParameters: {
+        'username': username,
+        'classId': classId,
+        'academicYearId': academicYearId,
+        if (semesterId != null) 'semesterId': semesterId,
+        if (semesterType != null && semesterType.trim().isNotEmpty)
+          'semesterType': semesterType,
+      },
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    return _readBinaryBytes(response.data);
+  }
+
+  Future<List<int>> downloadTeacherScoreTemplate({
+    required String username,
+    required int classId,
+    required int academicYearId,
+    int? semesterId,
+    String? semesterType,
+  }) async {
+    final response = await _dio.get<dynamic>(
+      '/scores/teacher/template',
+      queryParameters: {
+        'username': username,
+        'classId': classId,
+        'academicYearId': academicYearId,
+        if (semesterId != null) 'semesterId': semesterId,
+        if (semesterType != null && semesterType.trim().isNotEmpty)
+          'semesterType': semesterType,
+      },
+      options: Options(responseType: ResponseType.bytes),
+    );
+
+    return _readBinaryBytes(response.data);
+  }
+
+  Future<Map<String, dynamic>> importTeacherScores({
+    required String username,
+    required int classId,
+    required int academicYearId,
+    String? filePath,
+    List<int>? fileBytes,
+    String? fileName,
+    int? semesterId,
+    String? semesterType,
+  }) async {
+    final hasFilePath = filePath != null && filePath.trim().isNotEmpty;
+    final hasFileBytes = fileBytes != null && fileBytes.isNotEmpty;
+    if (!hasFilePath && !hasFileBytes) {
+      throw ArgumentError('Thiếu dữ liệu file import');
+    }
+
+    MultipartFile filePart;
+    if (hasFileBytes) {
+      filePart = MultipartFile.fromBytes(
+        fileBytes,
+        filename: fileName ?? 'scores.xlsx',
+      );
+    } else {
+      final resolvedName = (fileName != null && fileName.trim().isNotEmpty)
+          ? fileName.trim()
+          : filePath!.split(RegExp(r'[\\\\/]')).last;
+      filePart = await MultipartFile.fromFile(filePath!, filename: resolvedName);
+    }
+
+    final formData = FormData.fromMap({
+      'username': username,
+      'classId': classId,
+      'academicYearId': academicYearId,
+      if (semesterId != null) 'semesterId': semesterId,
+      if (semesterType != null && semesterType.trim().isNotEmpty)
+        'semesterType': semesterType,
+      'file': filePart,
+    });
+
+    final response = await _dio.post(
+      '/scores/teacher/import',
+      data: formData,
+      options: Options(contentType: 'multipart/form-data'),
+    );
+
+    return Map<String, dynamic>.from(response.data as Map);
+  }
+
+  List<int> _readBinaryBytes(dynamic data) {
+    if (data == null) {
+      return <int>[];
+    }
+
+    if (data is Uint8List) {
+      return data.toList(growable: false);
+    }
+
+    if (data is List<int>) {
+      return List<int>.from(data, growable: false);
+    }
+
+    if (data is List<dynamic>) {
+      final result = <int>[];
+      for (final item in data) {
+        if (item is int) {
+          result.add(item);
+        } else if (item is num) {
+          result.add(item.toInt());
+        } else {
+          final parsed = int.tryParse(item.toString());
+          if (parsed != null) {
+            result.add(parsed);
+          }
+        }
+      }
+      return result;
+    }
+
+    if (data is ByteBuffer) {
+      return data.asUint8List().toList(growable: false);
+    }
+
+    if (data is String) {
+      final raw = data.trim();
+      if (raw.isEmpty) {
+        return <int>[];
+      }
+
+      try {
+        final decoded = base64Decode(raw);
+        if (_looksLikeOfficeZip(decoded)) {
+          return decoded;
+        }
+      } catch (_) {}
+
+      try {
+        final parsed = jsonDecode(raw);
+        if (parsed is List) {
+          final listBytes = parsed
+              .map((e) => e is num ? e.toInt() : int.tryParse(e.toString()))
+              .whereType<int>()
+              .toList(growable: false);
+          if (_looksLikeOfficeZip(listBytes)) {
+            return listBytes;
+          }
+        }
+      } catch (_) {}
+
+      try {
+        final latin = latin1.encode(raw);
+        if (_looksLikeOfficeZip(latin)) {
+          return latin;
+        }
+      } catch (_) {}
+
+      // Trả rỗng để lớp UI báo lỗi rõ ràng thay vì tạo file .xlsx bị hỏng.
+      return <int>[];
+    }
+
+    return <int>[];
+  }
+
+  bool _looksLikeOfficeZip(List<int> bytes) {
+    if (bytes.length < 4) {
+      return false;
+    }
+
+    // XLSX là gói ZIP, signature phải bắt đầu bằng "PK".
+    return bytes[0] == 0x50 && bytes[1] == 0x4B;
+  }
 }
+

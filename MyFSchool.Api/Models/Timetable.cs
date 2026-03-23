@@ -9,7 +9,7 @@ namespace MyFSchool.Api.Models
         public int DayOfWeek { get; set; }
         public long SlotId { get; set; }
         public long SubjectId { get; set; }
-        public long TeacherId { get; set; }
+        public long? TeacherUserId { get; set; }
         public string? RoomName { get; set; }
         public string? Note { get; set; }
     }
