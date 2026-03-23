@@ -3,11 +3,13 @@ import 'package:flutter/material.dart';
 import 'chat_list_page.dart';
 import 'club_page.dart';
 import 'contact_screen.dart';
+import 'notification_list_page.dart';
 import 'profile_page.dart';
 import 'request_screen.dart';
 import 'schedule.dart';
 import 'score_page.dart';
 import 'teacher_score_page.dart';
+import '../services/notification_service.dart';
 
 class HomeScreen extends StatefulWidget {
   final String studentName;
@@ -33,11 +35,51 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _currentIndex = 0;
+  final NotificationService _notificationService = NotificationService();
+  int _unreadNotificationCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUnreadNotificationCount();
+  }
+
+  Future<void> _loadUnreadNotificationCount() async {
+    try {
+      final count = await _notificationService.getUnreadCount(
+        username: widget.parentUsername,
+      );
+      if (!mounted) return;
+      setState(() {
+        _unreadNotificationCount = count;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _unreadNotificationCount = 0;
+      });
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => NotificationListPage(
+          username: widget.parentUsername,
+          isTeacher: widget.isTeacher,
+        ),
+      ),
+    );
+
+    if (!mounted) return;
+    await _loadUnreadNotificationCount();
+  }
 
   void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Chức năng đang phát triển')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Chức năng đang phát triển')));
   }
 
   @override
@@ -114,7 +156,11 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
-      _MenuData(icon: Icons.edit_document, label: 'KT&KL', onTap: _showComingSoon),
+      _MenuData(
+        icon: Icons.edit_document,
+        label: 'KT&KL',
+        onTap: _showComingSoon,
+      ),
       _MenuData(
         icon: Icons.assignment_outlined,
         label: 'Bảng điểm',
@@ -123,7 +169,8 @@ class _HomeScreenState extends State<HomeScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => TeacherScorePage(username: widget.parentUsername),
+                builder: (_) =>
+                    TeacherScorePage(username: widget.parentUsername),
               ),
             );
             return;
@@ -145,8 +192,9 @@ class _HomeScreenState extends State<HomeScreen> {
     ];
 
     final displayNameLabel = isTeacher ? 'Tên giáo viên: ' : 'Tên học sinh: ';
-    final displayNameValue =
-        widget.studentName.isNotEmpty ? widget.studentName : 'Chưa có dữ liệu';
+    final displayNameValue = widget.studentName.isNotEmpty
+        ? widget.studentName
+        : 'Chưa có dữ liệu';
 
     final codeLabel = isTeacher ? 'Tài khoản: ' : 'MSHS: ';
     final codeValue = isTeacher
@@ -168,7 +216,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const Spacer(),
                       InkWell(
                         borderRadius: BorderRadius.circular(999),
-                        onTap: _showComingSoon,
+                        onTap: _openNotifications,
                         child: Container(
                           width: 42,
                           height: 42,
@@ -176,10 +224,46 @@ class _HomeScreenState extends State<HomeScreen> {
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
-                          child: const Icon(
-                            Icons.notifications_none,
-                            color: orange,
-                            size: 24,
+                          child: Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              const Center(
+                                child: Icon(
+                                  Icons.notifications_none,
+                                  color: orange,
+                                  size: 24,
+                                ),
+                              ),
+                              if (_unreadNotificationCount > 0)
+                                Positioned(
+                                  right: -2,
+                                  top: -2,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 5,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.red,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    constraints: const BoxConstraints(
+                                      minWidth: 16,
+                                    ),
+                                    child: Text(
+                                      _unreadNotificationCount > 99
+                                          ? '99+'
+                                          : _unreadNotificationCount.toString(),
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 9.5,
+                                        fontWeight: FontWeight.w700,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
                           ),
                         ),
                       ),
@@ -190,7 +274,10 @@ class _HomeScreenState extends State<HomeScreen> {
                     children: [
                       Text(
                         displayNameLabel,
-                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                       ),
                       Expanded(
                         child: Text(
@@ -223,7 +310,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(width: 10),
                       Text(
                         codeLabel,
-                        style: const TextStyle(fontSize: 13, color: Colors.black87),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: Colors.black87,
+                        ),
                       ),
                       Expanded(
                         child: Text(
@@ -246,7 +336,9 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                       Expanded(
                         child: Text(
-                          widget.campusName.isNotEmpty ? widget.campusName : '--',
+                          widget.campusName.isNotEmpty
+                              ? widget.campusName
+                              : '--',
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
@@ -267,12 +359,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: menuItems.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 4,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      mainAxisExtent: 110,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 4,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          mainAxisExtent: 110,
+                        ),
                     itemBuilder: (context, index) {
                       final item = menuItems[index];
                       return _MenuTile(
@@ -452,11 +545,7 @@ class _MenuData {
   final String label;
   final VoidCallback onTap;
 
-  _MenuData({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
+  _MenuData({required this.icon, required this.label, required this.onTap});
 }
 
 class _Avatar extends StatelessWidget {
@@ -474,11 +563,7 @@ class _Avatar extends StatelessWidget {
         shape: BoxShape.circle,
         border: Border.all(color: orange, width: 2),
       ),
-      child: const Icon(
-        Icons.person,
-        color: orange,
-        size: 26,
-      ),
+      child: const Icon(Icons.person, color: orange, size: 26),
     );
   }
 }
@@ -526,14 +611,10 @@ class _MenuTile extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-            ),
+            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600),
           ),
         ],
       ),
     );
   }
 }
-

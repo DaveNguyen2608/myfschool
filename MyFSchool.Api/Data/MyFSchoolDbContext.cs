@@ -35,6 +35,7 @@ namespace MyFSchool.Api.Data
         public DbSet<ChatConversation> ChatConversations { get; set; }
         public DbSet<ConversationParticipant> ConversationParticipants { get; set; }
         public DbSet<ChatMessage> ChatMessages { get; set; }
+        public DbSet<AppNotification> Notifications { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
 
@@ -378,6 +379,23 @@ namespace MyFSchool.Api.Data
                 entity.Property(e => e.IsRead).HasColumnName("is_read");
                 entity.Property(e => e.ReadAt).HasColumnName("read_at");
                 entity.Property(e => e.IsDeleted).HasColumnName("is_deleted");
+            });
+
+            modelBuilder.Entity<AppNotification>(entity =>
+            {
+                entity.ToTable("notifications");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.UserId).HasColumnName("user_id");
+                entity.Property(e => e.NotificationType).HasColumnName("notification_type");
+                entity.Property(e => e.Title).HasColumnName("title");
+                entity.Property(e => e.Message).HasColumnName("message");
+                entity.Property(e => e.ReferenceType).HasColumnName("reference_type");
+                entity.Property(e => e.ReferenceId).HasColumnName("reference_id");
+                entity.Property(e => e.IsRead).HasColumnName("is_read");
+                entity.Property(e => e.ReadAt).HasColumnName("read_at");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
             });
 
             modelBuilder.Entity<PasswordResetOtp>(entity =>

@@ -1,4 +1,4 @@
-import 'package:dio/dio.dart';
+﻿import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -28,17 +28,8 @@ class _RequestScreenState extends State<RequestScreen> {
   static const Color bg = Color(0xFFF5F5F5);
 
   final RequestService _service = RequestService();
-  final List<String> _teacherFilters = const [
-    'ALL',
-    'PENDING',
-    'APPROVED',
-    'REJECTED',
-  ];
-
   bool _isLoading = true;
   String? _error;
-  String _teacherFilter = 'ALL';
-  int? _processingRequestId;
   List<RequestItemModel> _items = const [];
 
   bool get _isParent => widget.mode == UserViewMode.parent;
@@ -60,10 +51,7 @@ class _RequestScreenState extends State<RequestScreen> {
     try {
       final data = _isParent
           ? await _service.getParentRequests(widget.username)
-          : await _service.getTeacherRequests(
-              username: widget.username,
-              status: _teacherFilter,
-            );
+          : await _service.getTeacherRequests(username: widget.username);
 
       if (!mounted) return;
       setState(() {
@@ -101,82 +89,6 @@ class _RequestScreenState extends State<RequestScreen> {
     await _load(silent: true);
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
-  }
-
-  Future<void> _approve(RequestItemModel item) async {
-    setState(() => _processingRequestId = item.id);
-    try {
-      final msg = await _service.approveRequest(
-        requestId: item.id,
-        username: widget.username,
-      );
-
-      if (!mounted) return;
-      await _load(silent: true);
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageFromError(e))),
-      );
-    } finally {
-      if (mounted) setState(() => _processingRequestId = null);
-    }
-  }
-
-  Future<void> _reject(RequestItemModel item) async {
-    final reasonCtrl = TextEditingController();
-    final reason = await showDialog<String>(
-      context: context,
-      builder: (_) => AlertDialog(
-        title: const Text('Lý do từ chối'),
-        content: TextField(
-          controller: reasonCtrl,
-          maxLines: 3,
-          decoration: const InputDecoration(hintText: 'Nhập lý do từ chối...'),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Hủy'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: orange),
-            onPressed: () => Navigator.pop(context, reasonCtrl.text.trim()),
-            child: const Text(
-              'Xác nhận',
-              style: TextStyle(color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (!mounted || reason == null || reason.isEmpty) return;
-
-    setState(() => _processingRequestId = item.id);
-    try {
-      final msg = await _service.rejectRequest(
-        requestId: item.id,
-        username: widget.username,
-        reason: reason,
-      );
-
-      if (!mounted) return;
-      await _load(silent: true);
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(_messageFromError(e))),
-      );
-    } finally {
-      if (mounted) setState(() => _processingRequestId = null);
-    }
   }
 
   Future<void> _callParent(String phone) async {
@@ -226,34 +138,6 @@ class _RequestScreenState extends State<RequestScreen> {
       ),
       body: Column(
         children: [
-          if (!_isParent)
-            SizedBox(
-              height: 42,
-              child: ListView.separated(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                scrollDirection: Axis.horizontal,
-                itemCount: _teacherFilters.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 8),
-                itemBuilder: (_, index) {
-                  final value = _teacherFilters[index];
-                  final selected = value == _teacherFilter;
-                  return ChoiceChip(
-                    label: Text(_statusText(value)),
-                    selected: selected,
-                    selectedColor: orange.withOpacity(0.18),
-                    labelStyle: TextStyle(
-                      color: selected ? orange : Colors.black87,
-                      fontWeight: FontWeight.w700,
-                    ),
-                    onSelected: (_) {
-                      if (selected) return;
-                      setState(() => _teacherFilter = value);
-                      _load();
-                    },
-                  );
-                },
-              ),
-            ),
           Expanded(
             child: RefreshIndicator(
               onRefresh: () => _load(silent: true),
@@ -297,7 +181,7 @@ class _RequestScreenState extends State<RequestScreen> {
           const SizedBox(height: 8),
           Center(
             child: Text(
-              _isParent ? 'Chưa có đơn nào' : 'Hiện chưa có đơn cần xử lý',
+              _isParent ? 'Chưa có đơn nào' : 'Hiện chưa có đơn nghỉ học',
               style: const TextStyle(fontWeight: FontWeight.w600),
             ),
           ),
@@ -311,8 +195,6 @@ class _RequestScreenState extends State<RequestScreen> {
       separatorBuilder: (_, __) => const SizedBox(height: 10),
       itemBuilder: (_, index) {
         final item = _items[index];
-        final pending = item.status.toUpperCase() == 'PENDING';
-        final processing = _processingRequestId == item.id;
 
         return Container(
           padding: const EdgeInsets.all(14),
@@ -340,7 +222,6 @@ class _RequestScreenState extends State<RequestScreen> {
                       style: const TextStyle(fontWeight: FontWeight.w700),
                     ),
                   ),
-                  _StatusChip(status: item.status),
                 ],
               ),
               const SizedBox(height: 6),
@@ -349,9 +230,7 @@ class _RequestScreenState extends State<RequestScreen> {
               Text('Thời gian: ${_fmt(item.startDate)} - ${_fmt(item.endDate)}'),
               if (!_isParent) ...[
                 const SizedBox(height: 6),
-                Text(
-                  'Phụ huynh: ${item.parentName.isEmpty ? '--' : item.parentName}',
-                ),
+                Text('Phụ huynh: ${item.parentName.isEmpty ? '--' : item.parentName}'),
                 Row(
                   children: [
                     Expanded(
@@ -371,51 +250,6 @@ class _RequestScreenState extends State<RequestScreen> {
               ],
               const SizedBox(height: 6),
               Text(item.reason, style: const TextStyle(color: Colors.black54)),
-              if (item.status.toUpperCase() == 'REJECTED' &&
-                  (item.rejectionReason ?? '').trim().isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    'Lý do từ chối: ${item.rejectionReason!.trim()}',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              if (!_isParent && pending) ...[
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(backgroundColor: orange),
-                        onPressed: processing ? null : () => _approve(item),
-                        child: processing
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
-                                ),
-                              )
-                            : const Text(
-                                'Đồng ý',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: processing ? null : () => _reject(item),
-                        child: const Text('Từ chối'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
             ],
           ),
         );
@@ -433,19 +267,6 @@ class _RequestScreenState extends State<RequestScreen> {
     if (code.toUpperCase() == 'LEAVE_ONE_DAY') return 'Xin nghỉ học 1 ngày';
     if (code.toUpperCase() == 'LEAVE_MULTI_DAY') return 'Xin nghỉ học dài ngày';
     return code;
-  }
-
-  static String _statusText(String code) {
-    switch (code) {
-      case 'PENDING':
-        return 'Chờ duyệt';
-      case 'APPROVED':
-        return 'Đã duyệt';
-      case 'REJECTED':
-        return 'Từ chối';
-      default:
-        return 'Tất cả';
-    }
   }
 }
 
@@ -668,43 +489,6 @@ class _CreateRequestScreenState extends State<CreateRequestScreen> {
   }
 }
 
-class _StatusChip extends StatelessWidget {
-  final String status;
-
-  const _StatusChip({required this.status});
-
-  @override
-  Widget build(BuildContext context) {
-    final code = status.toUpperCase();
-    late final Color bg;
-    late final Color text;
-    late final String label;
-
-    if (code == 'PENDING') {
-      bg = const Color(0xFFFFF0E4);
-      text = const Color(0xFFFF7A00);
-      label = 'Chờ duyệt';
-    } else if (code == 'APPROVED') {
-      bg = const Color(0xFFE8F7EC);
-      text = const Color(0xFF1F9D55);
-      label = 'Đã duyệt';
-    } else {
-      bg = const Color(0xFFFDEBEC);
-      text = const Color(0xFFD93025);
-      label = 'Từ chối';
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(999)),
-      child: Text(
-        label,
-        style: TextStyle(color: text, fontSize: 12, fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
 String _messageFromError(Object error) {
   if (error is DioException) {
     final data = error.response?.data;
@@ -714,4 +498,3 @@ String _messageFromError(Object error) {
   }
   return 'Có lỗi xảy ra, vui lòng thử lại';
 }
-
