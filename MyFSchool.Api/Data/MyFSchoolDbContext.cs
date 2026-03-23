@@ -38,6 +38,7 @@ namespace MyFSchool.Api.Data
         public DbSet<AppNotification> Notifications { get; set; }
         public DbSet<PasswordResetOtp> PasswordResetOtps { get; set; }
         public DbSet<Announcement> Announcements { get; set; }
+        public DbSet<NewsArticle> NewsArticles { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -432,6 +433,25 @@ namespace MyFSchool.Api.Data
                 entity.Property(e => e.CreatedBy).HasColumnName("created_by");
                 entity.Property(e => e.IsActive).HasColumnName("is_active");
                 entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+            });
+
+            modelBuilder.Entity<NewsArticle>(entity =>
+            {
+                entity.ToTable("news_posts");
+                entity.HasKey(e => e.Id);
+
+                entity.Property(e => e.Id).HasColumnName("id");
+                entity.Property(e => e.Title).HasColumnName("title");
+                entity.Property(e => e.Summary).HasColumnName("summary");
+                entity.Property(e => e.Content).HasColumnName("content");
+                entity.Property(e => e.CoverImageUrl).HasColumnName("image_url");
+                entity.Property(e => e.ArticleType).HasColumnName("post_type");
+                entity.Property(e => e.IsFeatured).HasColumnName("is_featured");
+                entity.Property(e => e.IsPublished).HasColumnName("is_published");
+                entity.Property(e => e.PublishedAt).HasColumnName("published_at");
+                entity.Property(e => e.CreatedBy).HasColumnName("author_user_id");
+                entity.Property(e => e.CreatedAt).HasColumnName("created_at");
+                entity.Property(e => e.UpdatedAt).HasColumnName("updated_at");
             });
         }
     }

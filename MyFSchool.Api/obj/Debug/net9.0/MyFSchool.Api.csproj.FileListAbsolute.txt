@@ -231,3 +231,10 @@ D:\myfschool\build_check\api_notifications_fix_reference_type\MyFSchool.Api.deps
 D:\myfschool\build_check\api_notifications_fix_reference_type\MyFSchool.Api.runtimeconfig.json
 D:\myfschool\build_check\api_notifications_fix_reference_type\MyFSchool.Api.dll
 D:\myfschool\build_check\api_notifications_fix_reference_type\MyFSchool.Api.pdb
+D:\myfschool\build_check\api_news_module\appsettings.Development.json
+D:\myfschool\build_check\api_news_module\appsettings.json
+D:\myfschool\build_check\api_news_module\MyFSchool.Api.staticwebassets.endpoints.json
+D:\myfschool\build_check\api_news_module\MyFSchool.Api.deps.json
+D:\myfschool\build_check\api_news_module\MyFSchool.Api.runtimeconfig.json
+D:\myfschool\build_check\api_news_module\MyFSchool.Api.dll
+D:\myfschool\build_check\api_news_module\MyFSchool.Api.pdb
